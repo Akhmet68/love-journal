@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7a7aa" />
+  <title>Наш дневник</title>
+  <link rel="stylesheet" href="./styles.css?v=10" />
+</head>
+<body>
+  <div class="page">
+    <div class="frame">
+      <header class="siteHeader">
+        <div class="brand">
+          <div class="brandBadge" aria-hidden="true">❤</div>
+          <div class="brandText">
+            <div class="brandTitle">Наш дневник</div>
+            <div class="brandSub" id="subtitle">календарь • лента • записи • альбом • live</div>
+          </div>
+        </div>
+
+        <div class="topActions">
+          <button class="btn ghost" id="btnTheme" type="button" aria-label="Сменить тему" title="Тема">☾</button>
+          <button class="btn ghost hidden" id="btnRefresh" type="button">Обновить</button>
+          <button class="btn ghost hidden" id="btnSignOut" type="button">Выйти</button>
+        </div>
+      </header>
+
+      <section class="window" aria-label="Окно приложения">
+        <div class="windowTop" aria-hidden="true">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="windowTitle">love club</div>
+          <div class="tinyHearts">❤ ❤ ❤</div>
+        </div>
+
+        <div class="windowBody">
+          <!-- AUTH -->
+          <section class="card authCard" id="authCard">
+            <h1>Вход</h1>
+            <p class="muted">Доступ только для двух аккаунтов.</p>
+            <form id="loginForm" class="stack">
+              <label class="field">
+                <span>Email</span>
+                <input id="email" type="email" inputmode="email" autocomplete="email" required />
+              </label>
+
+              <label class="field">
+                <span>Пароль</span>
+                <input id="password" type="password" autocomplete="current-password" required />
+              </label>
+
+              <button class="btn primary" type="submit" id="btnLogin">Войти</button>
+              <div class="error hidden" id="authError"></div>
+            </form>
+          </section>
+
+          <!-- APP -->
+          <section class="hidden" id="appRoot">
+            <section class="heroRow">
+              <div class="heroCard">
+                <div class="heroTitle">Наша история</div>
+                <div class="heroText">Здесь будут ваши даты, записи и фотографии. А ещё — совместная доска для рисунков.</div>
+                <div class="stats" id="statsRow"></div>
+              </div>
+              <div class="heroCard heroCard2">
+                <div class="heroTitle">Быстрые действия</div>
+                <div class="quickActions">
+                  <button class="btn primary" type="button" id="btnQuickSeed">Добавить важные даты</button>
+                  <button class="btn" type="button" id="btnQuickLive">Открыть Live</button>
+                  <button class="btn" type="button" id="btnSurprise">Сюрприз ❤</button>
+                </div>
+                <div class="muted small" id="liveStatus">Live: отключено</div>
+              </div>
+            </section>
+
+            <nav class="tabs" aria-label="Разделы">
+              <button class="tab active" data-tab="calendar" type="button">Календарь</button>
+              <button class="tab" data-tab="feed" type="button">Лента</button>
+              <button class="tab" data-tab="diary" type="button">Записи</button>
+              <button class="tab" data-tab="album" type="button">Альбом</button>
+              <button class="tab" data-tab="live" type="button">Live</button>
+            </nav>
+
+            <!-- CALENDAR -->
+            <section class="card tabPanel" id="tab-calendar">
+              <div class="row spread">
+                <div class="monthHead">
+                  <div class="monthLabel" id="monthLabel">MONTH</div>
+                  <div class="monthMeta" id="monthMeta">----</div>
+                </div>
+
+                <div class="row">
+                  <button class="btn iconBtn" id="btnMonthPrev" type="button" aria-label="Предыдущий месяц">←</button>
+                  <button class="btn iconBtn" id="btnMonthNext" type="button" aria-label="Следующий месяц">→</button>
+                </div>
+              </div>
+
+              <div class="calendarWrap">
+                <div class="calendar paperCalendar" id="calendarGrid" role="grid" aria-label="Календарь"></div>
+
+                <aside class="side">
+                  <div class="sideTitle" id="selectedDateTitle">—</div>
+
+                  <div class="sideActions">
+                    <button class="btn ghost" id="btnSeedDates" type="button">Добавить важные даты</button>
+                  </div>
+
+                  <div class="eventList" id="eventList"></div>
+
+                  <hr class="sep" />
+
+                  <h3 class="h3">Добавить событие</h3>
+                  <form id="eventForm" class="stack">
+                    <label class="field">
+                      <span>Дата</span>
+                      <input id="eventDate" type="date" required />
+                    </label>
+
+                    <label class="field">
+                      <span>Название</span>
+                      <input id="eventTitle" type="text" maxlength="80" required placeholder="например: познакомились" />
+                    </label>
+
+                    <label class="field">
+                      <span>Заметка (необязательно)</span>
+                      <input id="eventNote" type="text" maxlength="140" placeholder="маленькая подпись" />
+                    </label>
+
+                    <div class="row">
+                      <label class="field">
+                        <span>Тип</span>
+                        <select id="eventKind">
+                          <option value="memory">воспоминание</option>
+                          <option value="birthday">день рождения</option>
+                          <option value="other">другое</option>
+                        </select>
+                      </label>
+
+                      <label class="field">
+                        <span>Эмблема</span>
+                        <select id="eventIcon">
+                          <option value="❤">❤ сердце</option>
+                          <option value="🎂">🎂 торт</option>
+                          <option value="💍">💍 кольцо</option>
+                          <option value="🌹">🌹 роза</option>
+                          <option value="⭐">⭐ звезда</option>
+                          <option value="✨">✨ сияние</option>
+                          <option value="🏠">🏠 дом</option>
+                          <option value="✈️">✈️ поездка</option>
+                          <option value="📸">📸 фото</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <button class="btn primary" type="submit" id="btnAddEvent">Сохранить</button>
+                    <div class="error hidden" id="eventError"></div>
+                  </form>
+                </aside>
+              </div>
+            </section>
+
+            <!-- FEED -->
+            <section class="card tabPanel hidden" id="tab-feed">
+              <div class="row spread">
+                <h2>Лента</h2>
+                <div class="row">
+                  <input class="search" id="feedSearch" type="search" placeholder="поиск по ленте…" />
+                  <button class="btn" id="btnFeedMore" type="button">Ещё</button>
+                </div>
+              </div>
+              <div class="feed" id="feedList"></div>
+            </section>
+
+            <!-- DIARY -->
+            <section class="card tabPanel hidden" id="tab-diary">
+              <div class="row spread">
+                <h2>Записи</h2>
+                <div class="pager">
+                  <button class="btn iconBtn" id="btnEntriesPrev" type="button">←</button>
+                  <span class="muted" id="entriesPageLabel">1</span>
+                  <button class="btn iconBtn" id="btnEntriesNext" type="button">→</button>
+                </div>
+              </div>
+
+              <form id="entryForm" class="stack">
+                <div class="row">
+                  <label class="field">
+                    <span>Дата</span>
+                    <input id="entryDate" type="date" required />
+                  </label>
+                  <label class="field">
+                    <span>Теги (через запятую)</span>
+                    <input id="entryTags" type="text" placeholder="прогулка, дом, путешествие" />
+                  </label>
+                </div>
+
+                <label class="field">
+                  <span>Текст</span>
+                  <textarea id="entryBody" rows="6" required placeholder="Что запомнилось..."></textarea>
+                </label>
+
+                <div class="row right">
+                  <button class="btn primary" type="submit" id="btnAddEntry">Добавить запись</button>
+                </div>
+                <div class="error hidden" id="entryError"></div>
+              </form>
+
+              <div class="list" id="entriesList"></div>
+            </section>
+
+            <!-- ALBUM -->
+            <section class="card tabPanel hidden" id="tab-album">
+              <div class="row spread">
+                <h2>Альбом</h2>
+                <div class="muted" id="albumMeta">—</div>
+              </div>
+
+              <form id="albumForm" class="stack">
+                <div class="row">
+                  <label class="field">
+                    <span>Дата</span>
+                    <input id="photoDate" type="date" required />
+                  </label>
+                  <label class="field">
+                    <span>Подпись (необязательно)</span>
+                    <input id="photoCaption" type="text" maxlength="120" placeholder="например: вечерняя прогулка" />
+                  </label>
+                </div>
+
+                <label class="field">
+                  <span>Фото (можно несколько)</span>
+                  <input id="photoFiles" type="file" accept="image/*" multiple />
+                  <span class="hint">Для скорости на телефоне большие фото будут уменьшены до 1600px.</span>
+                </label>
+
+                <div class="row right">
+                  <button class="btn primary" type="submit" id="btnUploadPhotos">Загрузить</button>
+                </div>
+                <div class="error hidden" id="albumError"></div>
+              </form>
+
+              <div class="masonry" id="photoGrid"></div>
+              <div class="sentinel" id="photoSentinel" aria-hidden="true"></div>
+            </section>
+
+            <!-- LIVE -->
+            <section class="card tabPanel hidden" id="tab-live">
+              <div class="row spread">
+                <h2>Live</h2>
+                <div class="muted small" id="livePeers">—</div>
+              </div>
+
+              <div class="liveToolbar">
+                <div class="toolGroup">
+                  <button class="btn toolBtn active" type="button" id="toolPen">Кисть</button>
+                  <button class="btn toolBtn" type="button" id="toolEraser">Ластик</button>
+                </div>
+
+                <div class="toolGroup colors" id="colorPresets">
+                  <button class="c" type="button" data-color="#c5364a" aria-label="Красный"></button>
+                  <button class="c" type="button" data-color="#111111" aria-label="Чёрный"></button>
+                  <button class="c" type="button" data-color="#ffffff" aria-label="Белый"></button>
+                  <button class="c" type="button" data-color="#f59e0b" aria-label="Оранжевый"></button>
+                  <button class="c" type="button" data-color="#10b981" aria-label="Зелёный"></button>
+                  <button class="c" type="button" data-color="#3b82f6" aria-label="Синий"></button>
+                </div>
+
+                <div class="toolGroup">
+                  <label class="range">
+                    <span class="muted small">Толщина</span>
+                    <input id="brushSize" type="range" min="2" max="24" value="6" />
+                  </label>
+                </div>
+
+                <div class="toolGroup grow">
+                  <input id="liveCaption" class="search" type="text" maxlength="120" placeholder="подпись для сохранения…" />
+                </div>
+
+                <div class="toolGroup">
+                  <button class="btn" type="button" id="btnLiveUndo">Undo</button>
+                  <button class="btn" type="button" id="btnLiveClear">Очистить</button>
+                  <button class="btn primary" type="button" id="btnLiveSave">Сохранить в альбом</button>
+                </div>
+              </div>
+
+              <div class="liveStage" id="liveStage">
+                <canvas id="liveCanvas"></canvas>
+                <div class="liveHint" id="liveHint">Подключаем Live…</div>
+              </div>
+
+              <div class="error hidden" id="liveError"></div>
+            </section>
+          </section>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+
+  <!-- Surprise modal -->
+  <div class="modal hidden" id="surpriseModal" role="dialog" aria-modal="true" aria-label="Сюрприз">
+    <div class="modalBackdrop" data-close="1"></div>
+    <div class="modalCard">
+      <div class="modalTop">
+        <div class="modalTitle">Сюрприз ❤</div>
+        <button class="btn iconBtn" type="button" id="btnSurpriseClose" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="modalBody">
+        <div class="surpriseMsg" id="surpriseMsg">—</div>
+        <div class="row right" style="margin-top:12px;">
+          <button class="btn" type="button" id="btnSurpriseAgain">Ещё</button>
+          <button class="btn primary" type="button" id="btnSurpriseCopy">Скопировать</button>
+        </div>
+      </div>
+    </div>
+    <canvas class="confetti hidden" id="confettiCanvas" aria-hidden="true"></canvas>
+  </div>
+
+  <!-- Photo viewer (lightbox) -->
+  <div class="viewer hidden" id="photoViewer" role="dialog" aria-modal="true" aria-label="Просмотр фото">
+    <div class="viewerBackdrop" data-close="1"></div>
+    <div class="viewerCard">
+      <div class="viewerTop">
+        <div class="viewerMeta" id="viewerMeta">—</div>
+        <div class="viewerActions">
+          <button class="btn iconBtn" type="button" id="btnViewPrev" aria-label="Предыдущее">←</button>
+          <button class="btn iconBtn" type="button" id="btnViewNext" aria-label="Следующее">→</button>
+          <button class="btn iconBtn" type="button" id="btnViewClose" aria-label="Закрыть">✕</button>
+        </div>
+      </div>
+      <div class="viewerStage" id="viewerStage">
+        <img id="viewerImg" alt="" decoding="async" loading="eager" />
+      </div>
+      <div class="viewerCaption" id="viewerCaption"></div>
+    </div>
+  </div>
+
+</body>
+</html>
