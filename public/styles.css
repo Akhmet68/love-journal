@@ -520,12 +520,31 @@ html[data-theme="dark"] .entry{ background: rgba(255,255,255,.06); }
   overflow:hidden;
   background: rgba(0,0,0,.10);
   margin: 0 0 10px;
+  position: relative;
 }
 html[data-theme="dark"] .photoCard{ background: rgba(255,255,255,.06); }
 .photoCard img{ width:100%; height:auto; display:block; }
 .photoCap{ padding: 10px 10px 12px; }
 .photoCap .d{ font-size: 12px; color: rgba(255,255,255,.72); }
 .photoCap .c{ margin-top: 4px; font-size: 13px; color:#fff; }
+
+/* Photo delete button */
+.photoDel{
+  position:absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(0,0,0,.24);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+html[data-theme="dark"] .photoDel{ background: rgba(0,0,0,.30); }
+.photoDel:active{ transform: translateY(1px); }
 .sentinel{ height: 1px; }
 
 /* Live */
@@ -566,9 +585,22 @@ html[data-theme="dark"] .photoCard{ background: rgba(255,255,255,.06); }
   border: 1px solid rgba(255,255,255,.18);
   background: rgba(0,0,0,.10);
   height: min(64vh, 620px);
+  /* prevents scroll/zoom while drawing on touch devices */
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+/* Stable viewport height on mobile Safari (prevents jumping when address bar shows/hides) */
+@supports (height: 1svh){
+  .liveStage{ height: min(64svh, 620px); }
 }
 html[data-theme="dark"] .liveStage{ background: rgba(255,255,255,.06); }
-#liveCanvas{ width: 100%; height: 100%; display:block; }
+#liveCanvas{
+  width: 100%;
+  height: 100%;
+  display:block;
+  touch-action: none;
+}
 .liveHint{
   position:absolute;
   inset: 0;
@@ -691,65 +723,16 @@ html[data-theme="light"] .viewerCaption{
   .calGrid{ grid-auto-rows: 44px; gap: 7px; }
   .viewerCard{ width: calc(100vw - 18px); height: 86vh; }
 }
-/* ===== Mobile LIVE fixes (no scroll while drawing) ===== */
-.liveStage,
-#liveCanvas{
-  touch-action: none;
-  overscroll-behavior: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
 
-/* lock page scroll only when Live is open */
-html.live-lock,
-body.live-lock{
-  overflow: hidden;
-  height: 100%;
-}
-
-/* dvh helps iOS safari toolbars */
-.liveStage{
-  height: min(64vh, 620px);
-  height: min(64dvh, 620px);
-  min-height: 320px;
-}
-
-/* ===== Extra adaptive for small phones (iPhone 6/7/SE ~320px) ===== */
+/* Extra-small phones (iPhone 6/7/SE etc.) */
 @media (max-width: 380px){
-  .page{ padding: 12px 10px 56px; }
   .frame{ padding: 10px; border-radius: 26px; }
-  .siteHeader{ padding: 4px 6px 12px; }
   .brandBadge{ width: 38px; height: 38px; }
   .brandTitle{ font-size: 16px; }
-  .brandSub{ font-size: 12px; max-width: 66vw; }
-
+  .brandSub{ font-size: 12px; }
+  .windowTop{ height: 48px; }
   .windowBody{ padding: 10px; }
-  .card{ padding: 12px; border-radius: 22px; }
-
-  .tabs{ gap: 8px; }
-  .tab{ padding: 7px 12px; min-height: 38px; }
-
-  .monthLabel{ font-size: 30px; letter-spacing: 1.4px; }
-  .calGrid{ gap: 6px; padding: 10px 10px 12px; grid-auto-rows: 42px; }
-  .day .mark{ width: 20px; height: 20px; font-size: 12px; bottom: 5px; left: 6px; }
-
-  .field{ min-width: 0; } /* чтобы не ломало форму в узких экранах */
-  .liveToolbar{ gap: 8px; }
-  .toolGroup{ gap: 8px; }
-  .range{ min-width: 140px; }
-
-  .liveStage{
-    height: min(58vh, 520px);
-    height: min(58dvh, 520px);
-    min-height: 280px;
-  }
-}
-
-/* ===== Safe-area for iPhone notch ===== */
-.page{
-  padding-top: max(12px, env(safe-area-inset-top));
-  padding-left: max(12px, env(safe-area-inset-left));
-  padding-right: max(12px, env(safe-area-inset-right));
-  padding-bottom: max(56px, env(safe-area-inset-bottom));
+  .monthLabel{ font-size: 30px; }
+  .calGrid{ grid-auto-rows: 40px; gap: 6px; }
+  .liveStage{ height: min(58vh, 520px); }
 }
