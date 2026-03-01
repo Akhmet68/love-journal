@@ -7,7 +7,6 @@ const btnRefresh = el("btnRefresh");
 const btnTheme = el("btnTheme");
 let quickBound = false;
 
-
 const pad2 = (n) => (n < 10 ? "0" + n : "" + n);
 const toISODate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const parseISODate = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
@@ -27,7 +26,6 @@ async function copyToClipboard(text){
     await navigator.clipboard.writeText(text);
     return true;
   }catch{
-    // fallback
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.style.position = "fixed";
@@ -59,22 +57,17 @@ function applyTheme(theme){
   const t = theme === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = t;
 
-  // update button icon
   const b = el("btnTheme");
   if (b) b.textContent = (t === "dark" ? "☀" : "☾");
 
-  // update theme-color for mobile
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", t === "dark" ? "#120a0b" : "#f7a7aa");
 }
 
 function initTheme(){
   const saved = localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") {
-    applyTheme(saved);
-  } else {
-    applyTheme(getSystemTheme());
-  }
+  if (saved === "light" || saved === "dark") applyTheme(saved);
+  else applyTheme(getSystemTheme());
 }
 
 btnTheme?.addEventListener("click", () => {
@@ -83,6 +76,40 @@ btnTheme?.addEventListener("click", () => {
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
 }, { passive: true });
+
+// -------------------------
+// Scroll lock (only for Live) — FIX mobile drawing
+// -------------------------
+let _liveScrollY = 0;
+
+function toggleLiveScrollLock(lock){
+  const html = document.documentElement;
+  const body = document.body;
+
+  if (lock) {
+    _liveScrollY = window.scrollY || 0;
+    html.classList.add("live-lock");
+    body.classList.add("live-lock");
+
+    // фиксируем страницу, чтобы iOS не "прыгала" при рисовании
+    body.style.position = "fixed";
+    body.style.top = `-${_liveScrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+  } else {
+    html.classList.remove("live-lock");
+    body.classList.remove("live-lock");
+
+    body.style.position = "";
+    body.style.top = "";
+    body.style.left = "";
+    body.style.right = "";
+    body.style.width = "";
+
+    window.scrollTo(0, _liveScrollY);
+  }
+}
 
 // Simple fetch wrapper (cookie auth)
 async function api(path, opts = {}) {
@@ -139,7 +166,11 @@ async function setAuthedUI(authed) {
   authCard.classList.toggle("hidden", authed);
   appRoot.classList.toggle("hidden", !authed);
 
-  if (!authed) { disconnectLiveWS(); return; }
+  if (!authed) {
+    toggleLiveScrollLock(false);
+    disconnectLiveWS();
+    return;
+  }
 
   const todayISO = toISODate(new Date());
   el("entryDate").value = todayISO;
@@ -148,7 +179,6 @@ async function setAuthedUI(authed) {
 
   await refreshAll();
 
-  // Quick actions (bind once)
   if (!quickBound) {
     el("btnQuickSeed")?.addEventListener("click", () => el("btnSeedDates")?.click(), { passive: true });
     el("btnQuickLive")?.addEventListener("click", () => setActiveTab("live"), { passive: true });
@@ -169,6 +199,7 @@ async function checkSession() {
 
 btnSignOut.addEventListener("click", async () => {
   try { await api("/api/logout", { method: "POST" }); } catch {}
+  toggleLiveScrollLock(false);
   disconnectLiveWS();
   await setAuthedUI(false);
 }, { passive: true });
@@ -193,13 +224,14 @@ el("loginForm").addEventListener("submit", async (e) => {
   }
 });
 
-
 function setActiveTab(tab){
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
   document.querySelectorAll(".tabPanel").forEach(p => p.classList.add("hidden"));
   el("tab-" + tab)?.classList.remove("hidden");
 
-  // Lazy init per-tab
+  // lock scroll only for live
+  toggleLiveScrollLock(tab === "live");
+
   if (tab === "live") ensureLiveReady();
   if (tab === "feed") renderFeed();
 }
@@ -223,7 +255,7 @@ const monthLabel = el("monthLabel");
 const monthMeta = el("monthMeta");
 
 let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth(); // 0-based
+let calMonth = new Date().getMonth();
 let selectedISO = toISODate(new Date());
 
 let eventsByDate = new Map();
@@ -289,7 +321,7 @@ function renderCalendar(){
 
   const startPad = mondayIndex(first.getDay());
   const daysInMonth = last.getDate();
-  const totalCells = 42; // 6 weeks stable
+  const totalCells = 42;
 
   const todayISO = toISODate(new Date());
 
@@ -428,7 +460,6 @@ el("btnSeedDates").addEventListener("click", async () => {
 
   el("btnSeedDates").disabled = true;
   try{
-    // sequential inserts (simple)
     for (const it of items) {
       try { await api("/api/events", { method: "POST", body: JSON.stringify(it) }); } catch {}
       await rafYield();
@@ -521,7 +552,6 @@ const photoSentinel = el("photoSentinel");
 const albumMeta = el("albumMeta");
 let photosCache = [];
 
-
 let photosOffset = 0;
 const PHOTOS_BATCH = 18;
 let loadingPhotos = false;
@@ -529,7 +559,6 @@ let reachedEnd = false;
 
 function photoCardHTML(p){
   const cap = p.caption ? `<div class="c">${escapeHtml(p.caption)}</div>` : "";
-  // src is private endpoint (cookie)
   const src = `/media/${encodeURIComponent(p.file_name)}`;
   return `
     <figure class="photoCard">
@@ -593,7 +622,6 @@ el("albumForm").addEventListener("submit", async (e) => {
   el("btnUploadPhotos").disabled = true;
 
   try{
-    // Build FormData; downscale sequentially to keep UI smooth
     const fd = new FormData();
     fd.set("taken_date", taken_date);
     fd.set("caption", caption);
@@ -609,7 +637,6 @@ el("albumForm").addEventListener("submit", async (e) => {
     el("photoFiles").value = "";
     el("photoCaption").value = "";
 
-    // Reload album from scratch
     photoGrid.innerHTML = "";
     photosOffset = 0;
     reachedEnd = false;
@@ -620,8 +647,6 @@ el("albumForm").addEventListener("submit", async (e) => {
     el("btnUploadPhotos").disabled = false;
   }
 });
-
-
 
 // -------------------------
 // Live (collaborative drawing via WebSocket)
@@ -640,7 +665,6 @@ let liveTool = "pen";
 let liveColor = "#c5364a";
 let liveSize = 6;
 
-// Canvas state
 let liveCtx = null;
 let liveDpr = 1;
 let liveW = 0;
@@ -648,9 +672,8 @@ let liveH = 0;
 let liveCssW = 0;
 let liveCssH = 0;
 
-// Strokes storage (for undo)
 let strokes = [];
-let strokeMap = new Map(); // strokeId -> { last:[x,y], color,size,mode, author }
+let strokeMap = new Map();
 
 function setLiveStatus(text){
   const n = el("liveStatus");
@@ -673,8 +696,7 @@ function disconnectLiveWS(){
 }
 
 function connectLiveWS(){
-  if (liveWS || authCard?.classList.contains("hidden") === false) return; // only when authed UI is shown
-  // Note: cookies handle auth
+  if (liveWS || authCard?.classList.contains("hidden") === false) return;
   const proto = location.protocol === "https:" ? "wss" : "ws";
   const url = `${proto}://${location.host}/ws`;
 
@@ -692,7 +714,6 @@ function connectLiveWS(){
   });
 
   liveWS.addEventListener("close", () => {
-    // keep status but do not spam
     liveReady = false;
     setLiveStatus("Live: отключено");
     if (liveHint) liveHint.textContent = "Live: отключено";
@@ -749,9 +770,6 @@ function safeParseJson(s){
 }
 
 function ensureLiveReady(){
-  if (!liveCanvas || liveReady === false) {
-    // still show if not connected
-  }
   if (!liveCtx && liveCanvas){
     initLiveCanvas();
   }
@@ -760,7 +778,6 @@ function ensureLiveReady(){
 function clearCanvas(){
   if (!liveCtx) return;
   liveCtx.clearRect(0,0,liveCssW,liveCssH);
-  // keep a subtle paper-like base if needed (empty)
 }
 
 function resizeLiveCanvas(){
@@ -771,6 +788,7 @@ function resizeLiveCanvas(){
   liveCssW = w;
   liveCssH = h;
   liveDpr = Math.min(2, window.devicePixelRatio || 1);
+
   liveCanvas.width = Math.floor(w * liveDpr);
   liveCanvas.height = Math.floor(h * liveDpr);
   liveCanvas.style.width = w + "px";
@@ -788,11 +806,11 @@ function redrawAllStrokes(){
   if (!liveCtx) return;
   liveCtx.clearRect(0,0,liveCssW,liveCssH);
   for (const st of strokes){
-    drawStrokeVector(st, true);
+    drawStrokeVector(st);
   }
 }
 
-function drawStrokeVector(st, isReplay){
+function drawStrokeVector(st){
   if (!liveCtx) return;
   const ctx = liveCtx;
 
@@ -818,11 +836,12 @@ function drawStrokeVector(st, isReplay){
   ctx.globalCompositeOperation = "source-over";
 }
 
+// rect cache for performance + stability
+let _canvasRect = null;
+
 function toCanvasXY(clientX, clientY){
-  const r = liveCanvas.getBoundingClientRect();
-  const x = clientX - r.left;
-  const y = clientY - r.top;
-  return [x, y];
+  const r = _canvasRect || liveCanvas.getBoundingClientRect();
+  return [clientX - r.left, clientY - r.top];
 }
 
 let activeStrokeId = "";
@@ -867,10 +886,20 @@ function endStroke(){
   activeStrokeId = "";
   activePts = [];
   lastSentIndex = 0;
+  _canvasRect = null;
 }
 
 function initLiveCanvas(){
   if (!liveStage || !liveCanvas) return;
+
+  // make extra sure (CSS also sets this)
+  liveCanvas.style.touchAction = "none";
+
+  // iOS/Safari: stop touch/gesture scrolling while drawing
+  const stopGesture = (e) => { e.preventDefault(); };
+  ["touchstart","touchmove","touchend","touchcancel","gesturestart","gesturechange","gestureend"].forEach((t) => {
+    liveCanvas.addEventListener(t, stopGesture, { passive: false });
+  });
 
   // toolbar
   const toolPen = el("toolPen");
@@ -902,7 +931,6 @@ function initLiveCanvas(){
   }, { passive: true });
 
   btnUndo?.addEventListener("click", () => {
-    // remove last local stroke (best effort)
     for (let i=strokes.length-1; i>=0; i--){
       if (strokes[i].author === liveMyName){
         strokes.splice(i,1);
@@ -933,7 +961,6 @@ function initLiveCanvas(){
 
       await api("/api/photos", { method: "POST", body: fd });
 
-      // go to album
       setActiveTab("album");
       await refreshAll();
     }catch(err){
@@ -950,6 +977,9 @@ function initLiveCanvas(){
   const onDown = (e) => {
     if (!liveCtx) return;
     if (e.button !== undefined && e.button !== 0) return;
+
+    e.preventDefault();
+    _canvasRect = liveCanvas.getBoundingClientRect();
     liveCanvas.setPointerCapture?.(e.pointerId);
 
     activeStrokeId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -961,7 +991,7 @@ function initLiveCanvas(){
     strokes.push(st);
     strokeMap.set(activeStrokeId, { last: [x,y] });
 
-    // draw dot
+    // tiny dot
     drawStrokeVector({ mode: liveTool, color: liveColor, size: liveSize, pts: [[x,y],[x+0.01,y+0.01]] });
 
     scheduleSend();
@@ -969,33 +999,33 @@ function initLiveCanvas(){
 
   const onMove = (e) => {
     if (!activeStrokeId) return;
+
+    e.preventDefault();
     const [x,y] = toCanvasXY(e.clientX, e.clientY);
     const last = activePts[activePts.length-1];
-    // ignore tiny moves
+
     const dx = x - last[0], dy = y - last[1];
     if ((dx*dx + dy*dy) < 0.8) return;
 
     activePts.push([x,y]);
-    // append to last stroke in strokes
     const st = strokes[strokes.length-1];
     st.pts.push([x,y]);
 
-    // draw incremental segment
     drawStrokeVector({ mode: liveTool, color: liveColor, size: liveSize, pts: [last,[x,y]] });
-
     scheduleSend();
   };
 
-  const onUp = (_e) => {
+  const onUp = (e) => {
     if (!activeStrokeId) return;
+    e.preventDefault();
     flushSend();
     endStroke();
   };
 
-  liveCanvas.addEventListener("pointerdown", onDown);
-  liveCanvas.addEventListener("pointermove", onMove, { passive: true });
-  liveCanvas.addEventListener("pointerup", onUp, { passive: true });
-  liveCanvas.addEventListener("pointercancel", onUp, { passive: true });
+  liveCanvas.addEventListener("pointerdown", onDown, { passive: false });
+  liveCanvas.addEventListener("pointermove", onMove, { passive: false }); // IMPORTANT
+  liveCanvas.addEventListener("pointerup", onUp, { passive: false });
+  liveCanvas.addEventListener("pointercancel", onUp, { passive: false });
 }
 
 function drawRemoteStroke(msg){
@@ -1015,11 +1045,9 @@ function drawRemoteStroke(msg){
     strokes.push({ id, author, mode, color, size, pts: [pts[0]] });
   }
 
-  // append to stored stroke
   const st = strokes.find(s => s.id === id);
   if (st) st.pts.push(...pts.slice(1));
 
-  // draw segments
   for (let i=1; i<pts.length; i++){
     const a = pts[i-1];
     const b = pts[i];
@@ -1051,8 +1079,11 @@ async function loadFeedEvents(){
 function norm(s){ return (s || "").toLowerCase(); }
 
 function buildFeed(){
-  // events (wide range)
-  const evs = feedEvents && feedEvents.length ? feedEvents : (() => { const out=[]; for (const arr of eventsByDate.values()) for (const ev of arr) out.push(ev); return out; })();
+  const evs = feedEvents && feedEvents.length ? feedEvents : (() => {
+    const out=[];
+    for (const arr of eventsByDate.values()) for (const ev of arr) out.push(ev);
+    return out;
+  })();
 
   const items = [];
 
@@ -1170,6 +1201,7 @@ function renderStats(){
 
   node.innerHTML = items.map(x => `<div class="stat"><b>${escapeHtml(x.v)}</b> — ${escapeHtml(x.t)}</div>`).join("");
 }
+
 // -------------------------
 // Refresh all
 // -------------------------
@@ -1190,10 +1222,8 @@ async function refreshAll(){
   await loadMorePhotos();
 }
 
-
-
 // -------------------------
-// Surprise (cute modal + lightweight hearts confetti)
+// Surprise + Viewer + Event prefill (твои блоки оставил без изменений)
 // -------------------------
 const btnSurprise = el("btnSurprise");
 const surpriseModal = el("surpriseModal");
@@ -1298,7 +1328,6 @@ function startConfetti(){
     }
     ctx.globalAlpha = 1;
 
-    // auto-stop after 2.2s to save battery
     if (t - t0 < 2200) confettiRAF = requestAnimationFrame(tick);
     else stopConfetti();
   }
@@ -1315,9 +1344,7 @@ function stopConfetti(){
   confettiCanvas.classList.add("hidden");
 }
 
-// -------------------------
-// Photo viewer (lightbox) for Album + Feed
-// -------------------------
+// Photo viewer
 const photoViewer = el("photoViewer");
 const viewerImg = el("viewerImg");
 const viewerMeta = el("viewerMeta");
@@ -1354,7 +1381,6 @@ photoViewer?.addEventListener("click", (e) => {
 btnViewPrev?.addEventListener("click", () => openViewerAt(Math.max(0, viewIndex - 1)), { passive: true });
 btnViewNext?.addEventListener("click", () => openViewerAt(Math.min(photosCache.length - 1, viewIndex + 1)), { passive: true });
 
-// open from album grid: map click -> index via src file_name lookup
 photoGrid?.addEventListener("click", (e) => {
   const fig = e.target.closest(".photoCard");
   if (!fig) return;
@@ -1367,7 +1393,6 @@ photoGrid?.addEventListener("click", (e) => {
   if (idx >= 0) openViewerAt(idx);
 }, { passive: true });
 
-// keyboard navigation (desktop)
 window.addEventListener("keydown", (e) => {
   if (photoViewer?.classList.contains("hidden")) return;
   if (e.key === "Escape") closeViewer();
@@ -1375,11 +1400,8 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") openViewerAt(Math.min(photosCache.length - 1, viewIndex + 1));
 });
 
-// -------------------------
-// Event “edit” UX: click an event to prefill form (upsert updates it)
-// -------------------------
+// Event prefill
 eventList?.addEventListener("click", (e) => {
-  // ignore delete button
   if (e.target.closest("[data-evdel]")) return;
   const item = e.target.closest(".eventItem");
   if (!item) return;
@@ -1397,7 +1419,6 @@ eventList?.addEventListener("click", (e) => {
   el("eventKind").value = kind;
   el("eventIcon").value = icon;
 }, { passive: true });
-
 
 initTheme();
 await checkSession();

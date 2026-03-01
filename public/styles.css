@@ -691,3 +691,65 @@ html[data-theme="light"] .viewerCaption{
   .calGrid{ grid-auto-rows: 44px; gap: 7px; }
   .viewerCard{ width: calc(100vw - 18px); height: 86vh; }
 }
+/* ===== Mobile LIVE fixes (no scroll while drawing) ===== */
+.liveStage,
+#liveCanvas{
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* lock page scroll only when Live is open */
+html.live-lock,
+body.live-lock{
+  overflow: hidden;
+  height: 100%;
+}
+
+/* dvh helps iOS safari toolbars */
+.liveStage{
+  height: min(64vh, 620px);
+  height: min(64dvh, 620px);
+  min-height: 320px;
+}
+
+/* ===== Extra adaptive for small phones (iPhone 6/7/SE ~320px) ===== */
+@media (max-width: 380px){
+  .page{ padding: 12px 10px 56px; }
+  .frame{ padding: 10px; border-radius: 26px; }
+  .siteHeader{ padding: 4px 6px 12px; }
+  .brandBadge{ width: 38px; height: 38px; }
+  .brandTitle{ font-size: 16px; }
+  .brandSub{ font-size: 12px; max-width: 66vw; }
+
+  .windowBody{ padding: 10px; }
+  .card{ padding: 12px; border-radius: 22px; }
+
+  .tabs{ gap: 8px; }
+  .tab{ padding: 7px 12px; min-height: 38px; }
+
+  .monthLabel{ font-size: 30px; letter-spacing: 1.4px; }
+  .calGrid{ gap: 6px; padding: 10px 10px 12px; grid-auto-rows: 42px; }
+  .day .mark{ width: 20px; height: 20px; font-size: 12px; bottom: 5px; left: 6px; }
+
+  .field{ min-width: 0; } /* чтобы не ломало форму в узких экранах */
+  .liveToolbar{ gap: 8px; }
+  .toolGroup{ gap: 8px; }
+  .range{ min-width: 140px; }
+
+  .liveStage{
+    height: min(58vh, 520px);
+    height: min(58dvh, 520px);
+    min-height: 280px;
+  }
+}
+
+/* ===== Safe-area for iPhone notch ===== */
+.page{
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+  padding-bottom: max(56px, env(safe-area-inset-bottom));
+}
